@@ -93,7 +93,7 @@ const Store = (() => {
     },
     async logout() { if (queue.length) await flush(); await sb.auth.signOut(); location.reload(); },
     user: async () => cloud ? (await sb.auth.getUser()).data.user : null,
-    all(coll) { return db[coll] || []; },
+    all(coll) { return (db && db[coll]) || []; },
     get(coll, id) { return this.all(coll).find(x => x.id === id); },
     put(coll, obj) {
       const list = db[coll] || (db[coll] = []);

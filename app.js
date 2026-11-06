@@ -84,6 +84,7 @@ function memoFrom(num, noSeitai) {
 // ===== 画面切り替え =====
 const routes = { visit: viewVisit, bulk: viewBulk, customers: viewCustomers, customer: viewCustomer, sales: viewSales, visits: viewVisits, newcustomer: viewNewCustomer, master: viewMaster, a: viewAnalysis, expenses: viewExpenses, goal: viewGoal };
 function router() {
+  if (document.body.classList.contains('login') || !Store.all('menus').length) return;
   const [name, arg] = location.hash.replace(/^#\//, '').split('/');
   const r = routes[name] ? name : 'visit';
   document.querySelectorAll('.side a').forEach(a => a.classList.toggle('on', a.dataset.nav === (r === 'customer' ? 'customers' : r === 'master' ? 'master-' + arg : r === 'a' ? 'a-' + (A_PAGES[arg] ? arg : 'report') : r)));
@@ -590,12 +591,19 @@ function showLogin(msg, ok) {
 function afterLogin() {
   document.body.classList.remove('login');
   if (Store.cloud) {
-    $('#modeNote').textContent = 'ネット保存（自動で保存されます）';
+    $('#modeNote').textContent = 'ネット保存（自動で保存されます）'; document.title = 'ますぎカルテ'; document.querySelector('.logo small')?.remove();
     $('#logout').hidden = false; $('#logout').onclick = () => Store.logout();
     window.addEventListener('beforeunload', e => { if (Store.pending()) { e.preventDefault(); e.returnValue = ''; } });
     window.addEventListener('karte:changed', () => { const r = location.hash.split('/')[1]; if (['sales', 'visits', 'customers', 'a', 'goal'].includes(r)) router(); });
   }
   router();
+  $('#backupLink').onclick = e => { e.preventDefault(); saveBackup(); };
+}
+function saveBackup() {
+  const blob = new Blob([Store.exportJSON()], { type: 'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'ますぎカルテ_バックアップ_' + today() + '.json';
+  document.body.appendChild(a); a.click(); a.remove();
+  localStorage.setItem('karte_last_backup', today()); toast('バックアップを保存しました（ダウンロード）');
 }
 (async () => {
   try { (await Store.init()) ? afterLogin() : showLogin(); }
