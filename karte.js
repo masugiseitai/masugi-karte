@@ -139,7 +139,7 @@ function viewCodes() {
   $('#view').innerHTML = `<h1>カルテの記号</h1><div class="card">
     <p class="muted" style="margin-top:0">来院登録のカルテ欄に並ぶボタンです。意味を入れておくと、カルテと印刷に「j+＝…」のように書き添えます（意味は院長の言葉で）。</p>
     <table class="master" style="max-width:760px"><tr><th>記号</th><th>意味</th><th class="num">今までの回数</th><th>並べ替え</th><th></th></tr>
-    ${list.map((c, i) => `<tr data-row="${i}"><td><input data-k="code" value="${esc(c.code)}" style="width:90px"></td><td><input data-k="meaning" value="${esc(c.meaning)}" placeholder="例：腎の補（高麗手指鍼）"></td>
+    ${list.map((c, i) => `<tr data-row="${i}"><td><input data-k="code" value="${esc(c.code)}" style="width:90px"></td><td><input data-k="meaning" value="${esc(c.meaning)}" placeholder="意味（院長の言葉で）"></td>
       <td class="num">${used[c.code] || 0}</td><td><button class="x" data-mv="${i}" data-d="-1"${i === 0 ? ' disabled' : ''}>↑</button><button class="x" data-mv="${i}" data-d="1"${i === list.length - 1 ? ' disabled' : ''}>↓</button></td><td><button class="x" data-rm="${i}">×</button></td></tr>`).join('')}
     </table><p><button class="green" id="addCode">+ 記号を追加</button></p></div>`;
   const save = l => { const s = settings(); s.codes = l; Store.setAll('settings', s); };
