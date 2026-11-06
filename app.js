@@ -120,6 +120,7 @@ function renderVisit() {
       ${c ? `<div class="picked"><div><b>${esc(fullName(c))}</b> <span class="muted">${esc(kana(c))}${c.karte ? '・No.' + esc(c.karte) : ''}</span><br>
           <span class="muted">前回 ${lv ? lv.date + '（' + daysBetween(lv.date, VS.date) + '日前）' : 'なし'}</span></div>
           <button class="auto" id="unpick">変更</button></div>
+          ${consentNotice(c)}
           ${hasWallet || tAfter !== tl || pAfter !== pl ? `<div class="wallet">
             ${tl || tAfter !== tl ? `<div class="row"><div>回数券 残り <b>${tl}回</b>${nextExpiry(c.id, 'ticket') ? ' <span class="muted">期限 ' + nextExpiry(c.id, 'ticket').replace(/-/g, '/') + '</span>' : ''}
                ${tAfter !== tl ? ' → 登録後 <b class="' + (tAfter < 0 ? 'down' : '') + '">' + tAfter + '回</b>' : ''}</div>
@@ -224,7 +225,7 @@ function bindVisit() {
     if (!VS.memo.trim() && !confirm('カルテ（施術内容）が空です。このまま登録しますか？')) return;
     const tA = balance(VS.customer.id, 'ticket', VS.items, VS.date), pA = balance(VS.customer.id, 'prepaid', VS.items, VS.date);
     if ((tA < 0 || pA < 0) && !confirm('回数券・プリペイドの残りが足りません。このまま登録しますか？')) return;
-    Store.put('visits', { date: VS.date, customerId: VS.customer.id, staff: settings().staff, items: VS.items, memo: VS.memo.trim(), karteS: (VS.kS || '').trim(), karteO: (VS.kO || '').trim(), karteP: (VS.kP || '').trim() });
+    Store.put('visits', { date: VS.date, customerId: VS.customer.id, staff: settings().staff, items: VS.items, memo: VS.memo.trim(), karteS: (VS.kS || '').trim(), karteO: (VS.kO || '').trim(), karteP: (VS.kP || '').trim(), karteAdverse: VS.kAd || '特になし', karteAdverseNote: (VS.kAd && VS.kAd !== '特になし') ? (VS.kAdN || '').trim() : '' });
     toast(fullName(VS.customer) + 'さんを登録しました');
     const d = VS.date; viewVisit(); VS.date = d; renderVisit();
   };

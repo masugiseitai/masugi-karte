@@ -159,3 +159,4 @@ body.login main { margin-left: 0; }
   body { background: #fff; }
   .kcard { break-inside: avoid; }
 }
+.consent-warn { border: 1px solid #f0c36d; background: #fffaf0; padding: 8px 12px; border-top: none; font-size: 13px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
