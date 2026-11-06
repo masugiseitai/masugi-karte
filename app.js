@@ -82,7 +82,7 @@ function memoFrom(num, noSeitai) {
 }
 
 // ===== 画面切り替え =====
-const routes = { visit: viewVisit, bulk: viewBulk, customers: viewCustomers, customer: viewCustomer, sales: viewSales, visits: viewVisits, newcustomer: viewNewCustomer, master: viewMaster, a: viewAnalysis, expenses: viewExpenses, goal: viewGoal };
+const routes = { visit: viewVisit, bulk: viewBulk, customers: viewCustomers, customer: viewCustomer, sales: viewSales, visits: viewVisits, newcustomer: viewNewCustomer, master: viewMaster, a: viewAnalysis, expenses: viewExpenses, goal: viewGoal, import: viewImport };
 function router() {
   if (document.body.classList.contains('login') || !Store.all('menus').length) return;
   const [name, arg] = location.hash.replace(/^#\//, '').split('/');
@@ -597,6 +597,7 @@ function afterLogin() {
     window.addEventListener('karte:changed', () => { const r = location.hash.split('/')[1]; if (['sales', 'visits', 'customers', 'a', 'goal'].includes(r)) router(); });
   }
   router();
+  if (window.karteReady) karteReady();
   $('#backupLink').onclick = e => { e.preventDefault(); saveBackup(); };
 }
 function saveBackup() {

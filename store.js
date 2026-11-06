@@ -23,8 +23,9 @@ const Store = (() => {
   function status(msg, bad) { const el = document.getElementById('syncState'); if (el) { el.textContent = msg; el.className = bad ? 'bad' : ''; } }
   function enqueue(coll, id, data) {
     queue = queue.filter(q => !(q.coll === coll && q.id === id)); queue.push({ coll, id, data });
-    localStorage.setItem(QKEY, JSON.stringify(queue)); flush();
+    saveQueue(); flush();
   }
+  function saveQueue() { try { localStorage.setItem(QKEY, JSON.stringify(queue)); } catch (e) { /* 大量取り込み時は容量を超えることがある */ } }
   async function flush() {
     if (!cloud || flushing || !queue.length) { if (!queue.length) status('保存済み'); return; }
     flushing = true; status('保存中…');
@@ -33,7 +34,7 @@ const Store = (() => {
         const batch = queue.slice(0, 200);
         const { error } = await sb.from('karte_records').upsert(batch.map(q => ({ coll: q.coll, id: q.id, data: q.data })));
         if (error) throw error;
-        queue = queue.slice(batch.length); localStorage.setItem(QKEY, JSON.stringify(queue));
+        queue = queue.slice(batch.length); saveQueue();
       }
       status('保存済み');
     } catch (e) { console.error(e); status('保存できていません（自動で再試行します）', true); setTimeout(() => { flushing = false; flush(); }, 15000); return; }
@@ -100,6 +101,13 @@ const Store = (() => {
       if (!obj.id) { obj.id = uid(); obj.created = new Date().toISOString(); list.push(obj); }
       else { const i = list.findIndex(x => x.id === obj.id); i >= 0 ? (list[i] = obj) : list.push(obj); }
       cloud ? enqueue(coll, obj.id, obj) : saveLocal(); return obj;
+    },
+    // まとめて登録（取り込み用）。recs = [[coll, obj], ...]
+    bulkPut(recs) {
+      recs.forEach(([coll, obj]) => { const list = db[coll] || (db[coll] = []); const i = list.findIndex(x => x.id === obj.id); i >= 0 ? (list[i] = obj) : list.push(obj); });
+      if (!cloud) return saveLocal();
+      const keys = new Set(recs.map(([c, o]) => c + '|' + o.id)); queue = queue.filter(q => !keys.has(q.coll + '|' + q.id));
+      recs.forEach(([coll, obj]) => queue.push({ coll, id: obj.id, data: obj })); saveQueue(); flush();
     },
     setAll(coll, arr) { db[coll] = arr; cloud ? enqueue('kv', coll, arr) : saveLocal(); },
     addValue(coll, value) { const a = (db[coll] || (db[coll] = [])); a.push(value); this.setAll(coll, a); },
