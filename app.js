@@ -606,6 +606,7 @@ function saveBackup() {
   localStorage.setItem('karte_last_backup', today()); toast('バックアップを保存しました（ダウンロード）');
 }
 (async () => {
+  if (!Store.cloud) document.title = 'ますぎカルテ（試作版）';
   try { (await Store.init()) ? afterLogin() : showLogin(); }
   catch (e) { console.error(e); $('#view').innerHTML = '<div class="card down">読み込みに失敗しました。ネットにつながっているか確かめて、ページを開き直してください。</div>'; }
 })();
