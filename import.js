@@ -70,7 +70,8 @@ function convertCockpit(raw) {
     const price = num(sv(r.price).v);
     const ref = isProd ? findOrAdd(products, 'p', it.v !== '0' ? it.v : '', name, price) : findOrAdd(menus, 'c', it.v !== '0' ? it.v : '', name, price);
     const g = grantFields(ref);
-    const pmsOf = (r.pms && r.pms.length) ? r.pms : [{ pm: { t: '現金' }, amt: price }];
+    const realPms = (r.pms || []).filter(p => { const x = sv(p.pm); return x.v && x.v !== '0' && !/選択/.test(x.t); });
+    const pmsOf = realPms.length ? realPms : [{ pm: { t: '現金' }, amt: price }];
     const items = pmsOf.map((p, j) => ({ kind: isProd ? 'product' : 'menu', refId: ref.id, name: ref.name, price: j === 0 ? price : 0, pm: pmId(sv(p.pm).t), paid: num(sv(p.amt).v), ...(j === 0 ? g : { grantType: '', grant: 0 }) }));
     const key = cust + '|' + day;
     const G = groups[key] = groups[key] || { ids: [], date: day, customerId: 'k' + cust, staff: sv(r.staff).t || '真杉 孝博', items: [], memos: [] };
