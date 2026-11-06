@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ますぎカルテ（試作版）</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css?v=20261106160631">
+</head>
+<body>
+<header class="hdr">
+  <a class="logo" href="#/sales">
+    <svg viewBox="0 0 32 32" width="30" height="30" aria-hidden="true"><circle cx="16" cy="16" r="13" fill="none" stroke="#2473c7" stroke-width="3"/><path d="M9 20l5-5 4 3 6-8" fill="none" stroke="#2473c7" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <span>ますぎカルテ</span>
+  </a>
+  <div class="bar">
+    <button class="burger" id="burger" aria-label="メニュー">&#9776;</button>
+    <div class="who"><span id="syncState"></span><span class="i">i</span>ますぎ鍼灸マッサージ院：真杉 孝博<button id="logout" class="chip" hidden>ログアウト</button></div>
+  </div>
+</header>
+<aside class="side" id="side">
+  <a href="#/sales" data-nav="sales" class="top"><i>⌂</i>ダッシュボード</a>
+  <div class="grp"><i>✎</i>登録</div>
+  <a href="#/visit" data-nav="visit" class="sub">来院</a>
+  <a href="#/bulk" data-nav="bulk" class="sub">まとめて登録</a>
+  <a href="#/newcustomer" data-nav="newcustomer" class="sub">顧客</a>
+  <a href="#/expenses" data-nav="expenses" class="sub">広告費/経費</a>
+  <a href="#/goal" data-nav="goal" class="sub">月間目標</a>
+  <a href="#/master/menus" data-nav="master-menus" class="sub">メニュー</a>
+  <a href="#/master/products" data-nav="master-products" class="sub">物販</a>
+  <a href="#/master/symptoms" data-nav="master-symptoms" class="sub">症状</a>
+  <a href="#/master/media" data-nav="master-media" class="sub">集客媒体</a>
+  <a href="#/master/pms" data-nav="master-pms" class="sub">支払い方法</a>
+  <a href="#/master/memo" data-nav="master-memo" class="sub">メモのボタン</a>
+  <div class="grp"><i>☰</i>管理</div>
+  <a href="#/visits" data-nav="visits" class="sub">来院</a>
+  <a href="#/customers" data-nav="customers" class="sub">顧客</a>
+  <div class="grp"><i>▥</i>分析</div>
+  <a href="#/a/report" data-nav="a-report" class="sub">月次レポート</a>
+  <a href="#/a/sales" data-nav="a-sales" class="sub">売上推移</a>
+  <a href="#/a/attract" data-nav="a-attract" class="sub">集客推移</a>
+  <a href="#/a/repeat" data-nav="a-repeat" class="sub">リピート率</a>
+  <a href="#/a/ltv" data-nav="a-ltv" class="sub">LTV</a>
+  <a href="#/a/symptom" data-nav="a-symptom" class="sub">症状別ランキング</a>
+  <a href="#/a/expenses" data-nav="a-expenses" class="sub">経費関連</a>
+  <div class="note" id="modeNote">試作版：データはこのブラウザ内だけに保存</div>
+</aside>
+<main id="view"></main>
+<div id="toast"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="config.js?v=20261106160631"></script>
+<script src="store.js?v=20261106160631"></script>
+<script src="analysis.js?v=20261106160631"></script>
+<script src="expenses.js?v=20261106160631"></script>
+<script src="app.js?v=20261106160631"></script>
+</body>
+</html>
