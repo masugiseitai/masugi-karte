@@ -3,7 +3,7 @@
 // 継続率＝先月来た人のうち今月も来た割合 / LTV＝期間の売上÷期間に来た実人数
 // リピート率＝期間内に初めて来た人のうち、n回目まで来た人の割合
 const COL = { new: '#7aa6dc', exist: '#f4a0a0', back: '#b5d98f', main: '#2473c7', sub: '#9ec1ea' };
-const A_PAGES = { report: '月次レポート', sales: '売上推移', attract: '集客推移', repeat: 'リピート率', ltv: 'LTV', symptom: '症状別ランキング', expenses: '経費関連' };
+const A_PAGES = { report: '月次レポート', sales: '売上推移', attract: '集客推移', repeat: 'リピート率', ltv: 'LTV', symptom: '症状別ランキング', area: 'エリア分析', expenses: '経費関連' };
 let AM = null;            // 月を選ぶ画面の月
 let AP = null;            // 期間を選ぶ画面の期間 {from,to}
 let ATab = 'all';
@@ -12,7 +12,7 @@ function viewAnalysis(page) {
   if (!A_PAGES[page]) page = 'report';
   AM = AM || today().slice(0, 7);
   AP = AP || { from: today().slice(0, 7) + '-01', to: today() };
-  ({ report: aReport, sales: aSales, attract: aAttract, repeat: aRepeat, ltv: aLtv, symptom: aSymptom, expenses: aExpenses })[page]();
+  ({ report: aReport, sales: aSales, attract: aAttract, repeat: aRepeat, ltv: aLtv, symptom: aSymptom, area: aArea, expenses: aExpenses })[page]();
 }
 
 // --- 部品 ---
@@ -225,4 +225,41 @@ function aSymptom() {
     ${list.map(([n, x], k) => `<tr><td>${k + 1}</td><td>${esc(n)}</td><td class="num">${x.n}人（男${x.m}：女${x.f}）</td><td class="num">${x.newc}人</td><td class="num">${yen(x.sales)}</td><td><div class="meter"><i style="width:${x.n / max * 100}%"></i></div></td></tr>`).join('') || '<tr><td colspan="6" class="muted">データがありません</td></tr>'}
   </table></div><p class="muted">選んだ期間に来院した方を、顧客情報の「主訴」で数えています。</p></div>`;
   bindPeriod(aSymptom);
+}
+
+// --- エリア分析：住所の市区町村ごとの人数・売上（期間内に来院した方） ---
+function areaOf(addr) {
+  const s = String(addr || '').replace(/〒?\s*\d{3}-?\d{4}\s*/, '').trim();
+  const m = s.match(/^(東京都|北海道|(?:京都|大阪)府|.{2,3}県)\s*(.+?(?:市|区|町|村|郡.+?[町村]))/);
+  return m ? { pref: m[1], city: m[2] } : { pref: '（住所なし・不明）', city: '（住所なし・不明）' };
+}
+let AF = { media: '', chief: '', unit: 'city' };
+function aArea() {
+  const vs = Store.all('visits').filter(v => inRange(v.date, AP.from, AP.to));
+  const per = {}; vs.forEach(v => { const p = per[v.customerId] = per[v.customerId] || { n: 0, sales: 0 }; p.n++; p.sales += salesOfVisit(v); });
+  const g = {};
+  Object.keys(per).forEach(id => {
+    const c = Store.get('customers', id); if (!c) return;
+    if (AF.media && c.media !== AF.media) return; if (AF.chief && c.chief !== AF.chief) return;
+    const a = areaOf(c.address), k = AF.unit === 'pref' ? a.pref : (a.pref === a.city ? a.city : a.pref + ' ' + a.city);
+    const x = g[k] = g[k] || { people: 0, newc: 0, nobe: 0, sales: 0 };
+    x.people++; x.nobe += per[id].n; x.sales += per[id].sales; if (inRange(firstVisitDate(id), AP.from, AP.to)) x.newc++;
+  });
+  const list = Object.entries(g).sort((a, b) => b[1].people - a[1].people), max = Math.max(1, ...list.map(x => x[1].people));
+  const tot = list.reduce((s, [, x]) => s + x.people, 0);
+  const opt = (arr, cur) => `<option value="">すべて</option>${arr.map(o => `<option ${o === cur ? 'selected' : ''}>${esc(o)}</option>`).join('')}`;
+  $('#view').innerHTML = aHead('エリア分析', periodPicker()) + `
+  <div class="card"><div class="row" style="justify-content:flex-start">
+    <div class="auto"><label style="margin-top:0">単位</label><select id="af_unit" style="width:auto"><option value="city" ${AF.unit === 'city' ? 'selected' : ''}>市区町村</option><option value="pref" ${AF.unit === 'pref' ? 'selected' : ''}>都道府県</option></select></div>
+    <div class="auto"><label style="margin-top:0">集客媒体</label><select id="af_media" style="width:auto">${opt(Store.all('media'), AF.media)}</select></div>
+    <div class="auto"><label style="margin-top:0">主訴</label><select id="af_chief" style="width:auto">${opt(Store.all('symptoms'), AF.chief)}</select></div>
+  </div></div>
+  <div class="card"><h2>来院した方の住まい（${tot}人）</h2><div class="tablewrap"><table>
+    <tr><th>順位</th><th>地域</th><th class="num">人数</th><th class="num">割合</th><th class="num">うち新規</th><th class="num">のべ来院</th><th class="num">1人あたり回数</th><th class="num">売上</th><th style="width:22%"></th></tr>
+    ${list.map(([n, x], i) => `<tr><td>${i + 1}</td><td>${esc(n)}</td><td class="num">${x.people}人</td><td class="num">${pct(x.people, tot)}%</td><td class="num">${x.newc}人</td><td class="num">${x.nobe}回</td><td class="num">${(x.nobe / x.people).toFixed(1)}回</td><td class="num">${yen(x.sales)}</td><td><div class="meter"><i style="width:${x.people / max * 100}%"></i></div></td></tr>`).join('') || '<tr><td colspan="9" class="muted">データがありません</td></tr>'}
+  </table></div><p class="muted">顧客情報の住所から市区町村を読み取っています。チラシ・ポスティングやGoogleマップの対策地域を決める時の目安に。</p></div>`;
+  bindPeriod(aArea);
+  $('#af_unit').onchange = e => { AF.unit = e.target.value; aArea(); };
+  $('#af_media').onchange = e => { AF.media = e.target.value; aArea(); };
+  $('#af_chief').onchange = e => { AF.chief = e.target.value; aArea(); };
 }

@@ -386,7 +386,7 @@ function viewCustomer(id) {
     <div class="kpi"><div class="s">最終来院</div><div class="v">${ago != null ? ago + '日前' : '-'}</div><div class="s">${last || ''}</div></div>
     <div class="kpi"><div class="s">回数券 残り</div><div class="v">${tl > 0 ? tl + '回' : '-'}</div></div>
   </div><br>
-  <div class="grid2">
+  <div class="grid2 custgrid">
     <div><div class="card">${customerForm(c, false)}</div>
     ${wallets(id).some(w => w.type) ? `<div class="card"><h2>回数券・プリペイド</h2><div class="tablewrap"><table>
       <tr><th>種類</th><th>名前</th><th>購入日</th><th class="num">付与</th><th class="num">残り</th><th>期限</th></tr>
