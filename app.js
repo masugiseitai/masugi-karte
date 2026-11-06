@@ -177,7 +177,7 @@ function todayList(date) {
 function pickCustomer(c) {
   VS.customer = c;
   const lv = lastVisit(c.id);
-  let items = lv ? lv.items.filter(it => !it.grant).map(it => ({ ...it })) : [];
+  let items = lv ? lv.items.filter(it => !it.grant && it.kind === 'menu').map(it => ({ ...it })) : []; // 物販は前回分を引き継がない（COCKPITと同じ）
   const tl = ticketLeft(c.id), um = usualMenu(c.id);
   if (lv && lv.items.some(it => it.grant) && tl > 0) items = [ticketUseItem(um)];
   items.forEach(it => { if (it.pm === 'ticket' && tl <= 0) { it.pm = 'cash'; it.paid = it.price; } });
