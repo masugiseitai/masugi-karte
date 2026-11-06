@@ -82,7 +82,7 @@ function memoFrom(num, noSeitai) {
 }
 
 // ===== 画面切り替え =====
-const routes = { visit: viewVisit, bulk: viewBulk, customers: viewCustomers, customer: viewCustomer, sales: viewSales, visits: viewVisits, newcustomer: viewNewCustomer, master: viewMaster, a: viewAnalysis, expenses: viewExpenses, goal: viewGoal, import: viewImport };
+const routes = { visit: viewVisit, bulk: viewBulk, customers: viewCustomers, customer: viewCustomer, sales: viewSales, visits: viewVisits, newcustomer: viewNewCustomer, master: viewMaster, a: viewAnalysis, expenses: viewExpenses, goal: viewGoal, import: viewImport, kprint: viewKartePrint, codes: viewCodes };
 function router() {
   if (document.body.classList.contains('login') || !Store.all('menus').length) return;
   const [name, arg] = location.hash.replace(/^#\//, '').split('/');
@@ -117,7 +117,7 @@ function renderVisit() {
       <label>日付</label>
       <input type="date" id="vdate" value="${VS.date}">
       <label>顧客選択<span class="req">*</span></label>
-      ${c ? `<div class="picked"><div><b>${esc(fullName(c))}</b> <span class="muted">${esc(kana(c))}・No.${esc(c.karte)}</span><br>
+      ${c ? `<div class="picked"><div><b>${esc(fullName(c))}</b> <span class="muted">${esc(kana(c))}${c.karte ? '・No.' + esc(c.karte) : ''}</span><br>
           <span class="muted">前回 ${lv ? lv.date + '（' + daysBetween(lv.date, VS.date) + '日前）' : 'なし'}</span></div>
           <button class="auto" id="unpick">変更</button></div>
           ${hasWallet || tAfter !== tl || pAfter !== pl ? `<div class="wallet">
@@ -141,13 +141,7 @@ function renderVisit() {
         </div>
        </div>`).join('')}
       <div class="row" style="justify-content:flex-start"><button class="green auto" id="addMenu">+ メニュー</button><button class="green auto" id="addProd">+ 物販</button></div>
-      <label>メモ</label>
-      <div class="row" style="margin-bottom:6px;justify-content:flex-start">
-        ${settings().memoPresets.map((m, i) => `<button class="chip auto ${VS.memoNum === i + 1 ? 'on' : ''}" data-memo="${i + 1}">${i + 1}：${esc(m)}</button>`).join('')}
-        <button class="chip auto ${VS.noSeitai ? 'on' : ''}" id="noSeitai">整体なし</button>
-      </div>
-      <textarea id="memo">${esc(VS.memo)}</textarea>
-      <p class="muted">前回のメモ：${esc(lv?.memo || 'なし')}</p>
+      ${karteFormHtml(VS, lv)}
       <label>登録スタッフ</label><select disabled style="max-width:200px"><option>${esc(settings().staff)}</option></select>
       <p class="row"><span>合計 <b style="font-size:18px">${yen(VS.items.reduce((s, it) => s + (+it.price || 0), 0))}</b>
         <span class="muted">（売上 ${yen(VS.items.reduce((s, it) => s + (pmOf(it.pm)?.noSales ? 0 : +it.paid || 0), 0))}）</span></span></p>
@@ -203,7 +197,7 @@ function bindVisit() {
     q.oninput = () => {
       const r = searchCustomers(q.value), box = $('#res');
       box.hidden = !q.value;
-      box.innerHTML = r.map(c => { const lv = lastVisit(c.id); return `<div data-c="${c.id}"><span><b>${esc(fullName(c))}</b> <span class="muted">${esc(kana(c))}</span></span><span class="muted">No.${esc(c.karte)}・前回 ${lv ? lv.date : '-'}</span></div>`; }).join('') || '<div class="muted">見つかりません</div>';
+      box.innerHTML = r.map(c => { const lv = lastVisit(c.id); return `<div data-c="${c.id}"><span><b>${esc(fullName(c))}</b> <span class="muted">${esc(kana(c))}</span></span><span class="muted">${c.karte ? 'No.' + esc(c.karte) + '・' : ''}前回 ${lv ? lv.date : '-'}</span></div>`; }).join('') || '<div class="muted">見つかりません</div>';
       box.querySelectorAll('[data-c]').forEach(d => d.onclick = () => pickCustomer(Store.get('customers', d.dataset.c)));
     };
     q.onkeydown = e => { if (e.key === 'Enter') { const f = $('#res [data-c]'); if (f) f.click(); } };
@@ -224,11 +218,13 @@ function bindVisit() {
   document.querySelectorAll('[data-memo]').forEach(b => b.onclick = () => { VS.memoNum = +b.dataset.memo; VS.memo = memoFrom(VS.memoNum, VS.noSeitai); renderVisit(); });
   const ns = $('#noSeitai'); if (ns) ns.onclick = () => { VS.noSeitai = !VS.noSeitai; VS.memo = VS.memoNum ? memoFrom(VS.memoNum, VS.noSeitai) : (VS.noSeitai ? VS.memo.replace(/ ?整体/, '') : VS.memo); renderVisit(); };
   const mm = $('#memo'); if (mm) mm.oninput = () => { VS.memo = mm.value; };
+  if (VS.customer) bindKarteForm(VS, renderVisit);
   const sv = $('#save'); if (sv) sv.onclick = () => {
     if (!VS.items.length) return toast('メニューを入れてください');
+    if (!VS.memo.trim() && !confirm('カルテ（施術内容）が空です。このまま登録しますか？')) return;
     const tA = balance(VS.customer.id, 'ticket', VS.items, VS.date), pA = balance(VS.customer.id, 'prepaid', VS.items, VS.date);
     if ((tA < 0 || pA < 0) && !confirm('回数券・プリペイドの残りが足りません。このまま登録しますか？')) return;
-    Store.put('visits', { date: VS.date, customerId: VS.customer.id, staff: settings().staff, items: VS.items, memo: VS.memo });
+    Store.put('visits', { date: VS.date, customerId: VS.customer.id, staff: settings().staff, items: VS.items, memo: VS.memo.trim(), karteS: (VS.kS || '').trim(), karteO: (VS.kO || '').trim(), karteP: (VS.kP || '').trim() });
     toast(fullName(VS.customer) + 'さんを登録しました');
     const d = VS.date; viewVisit(); VS.date = d; renderVisit();
   };
@@ -382,26 +378,28 @@ function viewCustomer(id) {
   const tl = ticketLeft(id), ago = last ? daysBetween(last, today()) : null;
   $('#view').innerHTML = `
   <p><a href="#/customers">← 顧客一覧</a></p>
-  <h1>${esc(fullName(c))} <span class="muted">${esc(kana(c))}・No.${esc(c.karte)}</span></h1>
+  <h1>${esc(fullName(c))} <span class="muted">${esc(kana(c))}${c.karte ? '・No.' + esc(c.karte) : ''}</span></h1>
   <div class="kpis">
     <div class="kpi"><div class="s">来院回数</div><div class="v">${vs.length}回</div></div>
     <div class="kpi"><div class="s">累計（LTV）</div><div class="v">${man(total)}</div></div>
     <div class="kpi"><div class="s">最終来院</div><div class="v">${ago != null ? ago + '日前' : '-'}</div><div class="s">${last || ''}</div></div>
     <div class="kpi"><div class="s">回数券 残り</div><div class="v">${tl > 0 ? tl + '回' : '-'}</div></div>
   </div><br>
-  <div class="grid2 even">
-    <div class="card">${customerForm(c, false)}</div>
+  <div class="grid2">
+    <div><div class="card">${customerForm(c, false)}</div>
     ${wallets(id).some(w => w.type) ? `<div class="card"><h2>回数券・プリペイド</h2><div class="tablewrap"><table>
       <tr><th>種類</th><th>名前</th><th>購入日</th><th class="num">付与</th><th class="num">残り</th><th>期限</th></tr>
       ${wallets(id).map(w => `<tr><td>${TYPE_NAME[w.type]}</td><td>${esc(w.name)}</td><td>${w.bought.replace(/-/g, '/')}</td>
         <td class="num">${w.type === 'ticket' ? w.grant + '回' : yen(w.grant)}</td><td class="num ${w.left < 0 ? 'down' : ''}">${w.type === 'ticket' ? w.left + '回' : yen(w.left)}</td>
         <td>${w.expires ? w.expires.replace(/-/g, '/') : 'なし'}${w.expired ? ' <span class="tag dormant">期限切れ</span>' : ''}</td></tr>`).join('')}
-    </table></div></div>` : ''}
-    <div class="card"><h2>来院履歴</h2><div class="tablewrap"><table><tr><th>日付</th><th>内容</th><th class="num">入金</th><th>メモ</th></tr>
-      ${vs.map(v => `<tr><td>${v.date}</td><td>${v.items.map(i => esc(i.name) + ' <span class="muted">' + esc(pmOf(i.pm)?.name) + '</span>').join('<br>')}</td><td class="num">${yen(salesOfVisit(v))}</td><td>${esc(v.memo)}</td></tr>`).join('') || '<tr><td colspan="4" class="muted">まだありません</td></tr>'}
-    </table></div></div>
-  </div>`;
+    </table></div></div>` : ''}</div>
+    <div>${kartePanel(c)}</div>
+  </div>
+  <div class="card"><h2>来院・お会計の履歴</h2><div class="tablewrap"><table><tr><th>日付</th><th>内容</th><th class="num">入金</th></tr>
+      ${vs.map(v => `<tr><td>${v.date}</td><td>${v.items.map(i => esc(i.name) + ' <span class="muted">' + esc(pmOf(i.pm)?.name) + '</span>').join('<br>')}</td><td class="num">${yen(salesOfVisit(v))}</td></tr>`).join('') || '<tr><td colspan="3" class="muted">まだありません</td></tr>'}
+  </table></div></div>`;
   bindCustomerForm(c, () => viewCustomer(id));
+  bindKartePanel(c, () => viewCustomer(id));
 }
 
 // ===== 売上 =====

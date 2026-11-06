@@ -142,3 +142,20 @@ body.login main { margin-left: 0; }
 #syncState { font-size: 12px; color: var(--green); margin-right: 10px; }
 #syncState.bad { color: var(--red); font-weight: 700; }
 #logout { margin-left: 10px; }
+
+/* カルテ */
+.kmore summary { cursor: pointer; color: var(--blue); margin: 8px 0 2px; font-size: 13px; }
+.lastkarte { background: #f7f9fc; border-left: 3px solid #9ec1ea; padding: 6px 10px; font-size: 13px; margin-top: 8px; }
+.codes .chip { min-width: 44px; }
+.kcard { border-bottom: 1px solid var(--line2); padding: 8px 2px; }
+.kcard .khead { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+.kcard .kby { margin-left: auto; font-size: 12px; }
+.kcard .kbody { margin-top: 3px; line-height: 1.7; }
+.kcard .kl { display: inline-block; min-width: 2.6em; font-size: 11px; color: #fff; background: #8aa4c8; border-radius: 3px; text-align: center; margin-right: 6px; padding: 0 4px; }
+.khist { background: #fffaf0; padding: 6px 8px; margin-top: 4px; }
+@media print {
+  .hdr, .side, .noprint, #toast { display: none !important; }
+  main { margin: 0 !important; padding: 0 !important; }
+  body { background: #fff; }
+  .kcard { break-inside: avoid; }
+}
